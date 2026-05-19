@@ -84,18 +84,20 @@ async def chat(req: ChatRequest):
     if not WHOP_API_KEY:
         raise HTTPException(status_code=500, detail="サーバー設定エラー")
 
-    url = WHOP_API_URL.format(license_key=req.license_key)
-    async with httpx.AsyncClient(timeout=10) as client:
-        whop_res = await client.post(
-            url,
-            headers={
-                "Authorization": f"Bearer {WHOP_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={},
-        )
-    if whop_res.status_code not in (200, 201):
-        raise HTTPException(status_code=403, detail="ライセンスキーが無効です")
+    # マスターキーならWhop検証スキップ
+    if not (MASTER_KEY and req.license_key == MASTER_KEY):
+        url = WHOP_API_URL.format(license_key=req.license_key)
+        async with httpx.AsyncClient(timeout=10) as client:
+            whop_res = await client.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {WHOP_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={},
+            )
+        if whop_res.status_code not in (200, 201):
+            raise HTTPException(status_code=403, detail="ライセンスキーが無効です")
 
     if not req.api_key.startswith("gsk_"):
         raise HTTPException(status_code=400, detail="Groq APIキーが正しくありません（gsk_ で始まる必要があります）")
