@@ -37,7 +37,112 @@
     line-height: 1.75;
   }
 
-  /* ── Layout ── */
+  /* ── Gate Screen ── */
+  #gate-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+
+  #gate-screen.hidden { display: none; }
+
+  .gate-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+  }
+
+  .gate-icon {
+    font-size: 2.8rem;
+    margin-bottom: 16px;
+  }
+
+  .gate-box h1 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  .gate-box p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+    line-height: 1.8;
+  }
+
+  .gate-field {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .gate-field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  .gate-field input:focus { border-color: var(--accent); }
+  .gate-field input.valid { border-color: #4caf50; }
+  .gate-field input.error { border-color: #e57373; }
+
+  .gate-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-bottom: 12px;
+  }
+
+  .gate-btn:hover { opacity: 0.85; }
+  .gate-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .gate-error {
+    font-size: 0.8rem;
+    color: #e57373;
+    min-height: 20px;
+    margin-top: 4px;
+  }
+
+  .gate-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 24px;
+  }
+
+  .gate-hint a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+
+  /* ── App Layout ── */
   #app {
     display: flex;
     flex-direction: column;
@@ -56,20 +161,27 @@
     background: var(--surface);
     flex-shrink: 0;
   }
+
   header h1 {
     font-size: 1.05rem;
     font-weight: 600;
     letter-spacing: 0.08em;
     color: var(--accent);
   }
-  header h1 span { color: var(--muted); font-weight: 400; font-size: 0.85rem; margin-left: 8px; }
 
-  /* APIキー入力 */
+  header h1 span {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.85rem;
+    margin-left: 8px;
+  }
+
   #api-bar {
     display: flex;
     align-items: center;
     gap: 8px;
   }
+
   #api-key-input {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -82,6 +194,7 @@
     outline: none;
     transition: border-color 0.2s;
   }
+
   #api-key-input:focus { border-color: var(--accent); }
   #api-key-input.saved { border-color: #4caf50; }
 
@@ -95,6 +208,7 @@
     gap: 20px;
     scroll-behavior: smooth;
   }
+
   #messages::-webkit-scrollbar { width: 4px; }
   #messages::-webkit-scrollbar-track { background: transparent; }
   #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -104,6 +218,7 @@
     gap: 14px;
     animation: fadeUp 0.25s ease;
   }
+
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -120,6 +235,7 @@
     flex-shrink: 0;
     margin-top: 2px;
   }
+
   .msg.user .avatar { background: #2a2a1e; border: 1px solid var(--accent); color: var(--accent); }
   .msg.ai   .avatar { background: #1a2028; border: 1px solid var(--accent2); color: var(--accent2); }
 
@@ -131,13 +247,14 @@
     padding: 14px 18px;
     min-width: 0;
   }
+
   .msg.user .bubble { background: var(--user-bg); }
   .msg.ai   .bubble { background: var(--ai-bg); }
 
-  /* 数式・テキスト */
   .bubble p { margin-bottom: 0.6em; }
   .bubble p:last-child { margin-bottom: 0; }
   .katex-display { margin: 0.8em 0; overflow-x: auto; }
+
   .bubble code {
     font-family: var(--font-mono);
     font-size: 0.85em;
@@ -146,6 +263,7 @@
     border-radius: 4px;
     color: var(--accent2);
   }
+
   .bubble pre {
     background: #1a1a1a;
     border: 1px solid var(--border);
@@ -157,7 +275,6 @@
     margin: 0.6em 0;
   }
 
-  /* 画像プレビュー（会話内） */
   .bubble img {
     max-width: 100%;
     max-height: 260px;
@@ -167,7 +284,6 @@
     display: block;
   }
 
-  /* ローディングドット */
   .typing span {
     display: inline-block;
     width: 6px; height: 6px;
@@ -176,8 +292,10 @@
     margin: 0 2px;
     animation: blink 1.2s infinite;
   }
+
   .typing span:nth-child(2) { animation-delay: 0.2s; }
   .typing span:nth-child(3) { animation-delay: 0.4s; }
+
   @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
 
   /* ── Input area ── */
@@ -188,7 +306,6 @@
     flex-shrink: 0;
   }
 
-  /* 画像プレビュー */
   #preview-bar {
     display: none;
     align-items: center;
@@ -199,13 +316,16 @@
     border: 1px solid var(--border);
     border-radius: 6px;
   }
+
   #preview-bar.active { display: flex; }
   #preview-thumb { height: 44px; border-radius: 4px; }
   #preview-name { font-size: 0.8rem; color: var(--muted); flex: 1; }
+
   #remove-image {
     background: none; border: none; color: var(--muted);
     cursor: pointer; font-size: 1.1rem; padding: 0 4px;
   }
+
   #remove-image:hover { color: #e57373; }
 
   #input-row {
@@ -226,6 +346,7 @@
     flex-shrink: 0;
     transition: border-color 0.2s, color 0.2s;
   }
+
   #image-btn:hover { border-color: var(--accent); color: var(--accent); }
   #image-btn.has-image { border-color: var(--accent2); color: var(--accent2); }
 
@@ -245,6 +366,7 @@
     line-height: 1.6;
     transition: border-color 0.2s;
   }
+
   #user-input:focus { border-color: var(--accent); }
   #user-input::placeholder { color: var(--muted); }
 
@@ -260,6 +382,7 @@
     flex-shrink: 0;
     transition: opacity 0.2s;
   }
+
   #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   #send-btn:not(:disabled):hover { opacity: 0.85; }
 
@@ -270,29 +393,54 @@
     text-align: center;
   }
 
-  /* ── Welcome ── */
   #welcome {
     text-align: center;
     padding: 40px 20px;
     color: var(--muted);
   }
+
   #welcome .icon { font-size: 2.5rem; margin-bottom: 12px; }
   #welcome h2 { font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
   #welcome p { font-size: 0.88rem; line-height: 1.8; }
 </style>
 </head>
 <body>
-<div id="app">
 
-  <!-- Header -->
+<!-- ── Gate Screen ── -->
+<div id="gate-screen">
+  <div class="gate-box">
+    <div class="gate-icon">∑</div>
+    <h1>数学の先生</h1>
+    <p>ご利用にはライセンスキーと<br>Groq APIキーが必要です。</p>
+
+    <div class="gate-field">
+      <input type="password" id="license-key-input"
+             placeholder="ライセンスキー（Whopで購入）"
+             autocomplete="off" spellcheck="false">
+      <input type="password" id="groq-key-input"
+             placeholder="Groq APIキー（gsk_...）"
+             autocomplete="off" spellcheck="false">
+    </div>
+
+    <button class="gate-btn" id="gate-btn">入室する</button>
+    <div class="gate-error" id="gate-error"></div>
+
+    <div class="gate-hint">
+      ライセンスキーは <a href="https://whop.com" target="_blank">Whop</a> でご購入ください。<br>
+      Groq APIキーは <a href="https://console.groq.com" target="_blank">console.groq.com</a> で無料取得できます。
+    </div>
+  </div>
+</div>
+
+<!-- ── Main App ── -->
+<div id="app">
   <header>
     <h1>数学の先生 <span>Socratic AI Tutor</span></h1>
     <div id="api-bar">
-      <input type="password" id="api-key-input" placeholder="Groq APIキー (gsk_...)" autocomplete="off">
+      <input type="password" id="api-key-input" placeholder="Groq APIキー" autocomplete="off" readonly>
     </div>
   </header>
 
-  <!-- Messages -->
   <div id="messages">
     <div id="welcome">
       <div class="icon">∑</div>
@@ -302,7 +450,6 @@
     </div>
   </div>
 
-  <!-- Input area -->
   <div id="input-area">
     <div id="preview-bar">
       <img id="preview-thumb" src="" alt="">
@@ -321,35 +468,83 @@
 
 <script>
 // ── State ──────────────────────────────────────────────────
-const history = [];     // {role, content, imageDataUrl?}
-let pendingImage = null; // {base64, media_type, dataUrl, name}
-let isStreaming = false;
+const history = [];
+let pendingImage = null;
+let isStreaming  = false;
+let licenseKey   = '';
 
 // ── Elements ───────────────────────────────────────────────
-const messagesEl   = document.getElementById('messages');
-const welcomeEl    = document.getElementById('welcome');
-const inputEl      = document.getElementById('user-input');
-const sendBtn      = document.getElementById('send-btn');
-const imageBtn     = document.getElementById('image-btn');
-const fileInput    = document.getElementById('file-input');
-const previewBar   = document.getElementById('preview-bar');
-const previewThumb = document.getElementById('preview-thumb');
-const previewName  = document.getElementById('preview-name');
-const removeImgBtn = document.getElementById('remove-image');
-const apiKeyInput  = document.getElementById('api-key-input');
+const gateScreen    = document.getElementById('gate-screen');
+const licenseInput  = document.getElementById('license-key-input');
+const groqKeyInput  = document.getElementById('groq-key-input');
+const gateBtn       = document.getElementById('gate-btn');
+const gateError     = document.getElementById('gate-error');
+const messagesEl    = document.getElementById('messages');
+const welcomeEl     = document.getElementById('welcome');
+const inputEl       = document.getElementById('user-input');
+const sendBtn       = document.getElementById('send-btn');
+const imageBtn      = document.getElementById('image-btn');
+const fileInput     = document.getElementById('file-input');
+const previewBar    = document.getElementById('preview-bar');
+const previewThumb  = document.getElementById('preview-thumb');
+const previewName   = document.getElementById('preview-name');
+const removeImgBtn  = document.getElementById('remove-image');
+const apiKeyDisplay = document.getElementById('api-key-input');
 
-// ── APIキー: localStorage から復元 ────────────────────────
-const savedKey = localStorage.getItem('groq_api_key') || '';
-apiKeyInput.value = savedKey;
-if (savedKey) apiKeyInput.classList.add('saved');
+// ── セッション復元（ページリロード対応）────────────────────
+const savedLicense = sessionStorage.getItem('license_key') || '';
+const savedGroq    = sessionStorage.getItem('groq_key') || '';
+if (savedLicense && savedGroq) {
+  licenseKey = savedLicense;
+  apiKeyDisplay.value = savedGroq;
+  gateScreen.classList.add('hidden');
+}
 
-apiKeyInput.addEventListener('input', () => {
-  const v = apiKeyInput.value.trim();
-  localStorage.setItem('groq_api_key', v);
-  apiKeyInput.classList.toggle('saved', v.startsWith('gsk_'));
-});
+// ── ゲート認証 ─────────────────────────────────────────────
+gateBtn.addEventListener('click', handleGate);
+[licenseInput, groqKeyInput].forEach(el =>
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') handleGate(); })
+);
 
-// ── KaTeX レンダリング ─────────────────────────────────────
+async function handleGate() {
+  const lk = licenseInput.value.trim();
+  const gk = groqKeyInput.value.trim();
+
+  gateError.textContent = '';
+
+  if (!lk) { gateError.textContent = 'ライセンスキーを入力してください'; return; }
+  if (!gk.startsWith('gsk_')) { gateError.textContent = 'Groq APIキーが正しくありません（gsk_ で始まる必要があります）'; return; }
+
+  gateBtn.disabled = true;
+  gateBtn.textContent = '確認中…';
+
+  try {
+    const res = await fetch('/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ license_key: lk }),
+    });
+    const data = await res.json();
+
+    if (data.valid) {
+      licenseKey = lk;
+      sessionStorage.setItem('license_key', lk);
+      sessionStorage.setItem('groq_key', gk);
+      apiKeyDisplay.value = gk;
+      gateScreen.classList.add('hidden');
+    } else {
+      gateError.textContent = 'ライセンスキーが無効です。Whopでご購入ください。';
+      licenseInput.classList.add('error');
+    }
+  } catch (e) {
+    gateError.textContent = 'サーバーエラーが発生しました。しばらく待ってから再試行してください。';
+  } finally {
+    gateBtn.disabled = false;
+    gateBtn.textContent = '入室する';
+  }
+}
+
+// ── KaTeX ─────────────────────────────────────────────────
 function renderKatex(el) {
   if (typeof renderMathInElement === 'undefined') return;
   renderMathInElement(el, {
@@ -361,15 +556,12 @@ function renderKatex(el) {
   });
 }
 
-// ── テキスト → HTML（改行・コードブロック対応）─────────────
+// ── テキスト → HTML ────────────────────────────────────────
 function textToHtml(text) {
-  // コードブロック
   text = text.replace(/```([\s\S]*?)```/g, (_, code) =>
     `<pre><code>${escHtml(code.trim())}</code></pre>`);
-  // インラインコード
   text = text.replace(/`([^`]+)`/g, (_, code) =>
     `<code>${escHtml(code)}</code>`);
-  // 改行 → <br>（数式ブロックの前後は維持）
   text = text.replace(/\n/g, '<br>');
   return text;
 }
@@ -382,7 +574,7 @@ function escHtml(s) {
 function addMessage(role, content, imageDataUrl = null) {
   if (welcomeEl) welcomeEl.remove();
 
-  const msg  = document.createElement('div');
+  const msg    = document.createElement('div');
   msg.className = `msg ${role}`;
 
   const avatar = document.createElement('div');
@@ -412,7 +604,7 @@ function addMessage(role, content, imageDataUrl = null) {
   return { bubble, textDiv };
 }
 
-// ── ローディング表示 ───────────────────────────────────────
+// ── ローディング ───────────────────────────────────────────
 function addTyping() {
   if (welcomeEl) welcomeEl.remove();
   const msg = document.createElement('div');
@@ -439,13 +631,12 @@ imageBtn.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => {
   const file = fileInput.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = (e) => {
     const dataUrl = e.target.result;
     const base64  = dataUrl.split(',')[1];
     pendingImage  = { base64, media_type: file.type, dataUrl, name: file.name };
-    previewThumb.src  = dataUrl;
+    previewThumb.src = dataUrl;
     previewName.textContent = file.name;
     previewBar.classList.add('active');
     imageBtn.classList.add('has-image');
@@ -465,9 +656,10 @@ async function sendMessage() {
   if (isStreaming) return;
 
   const text   = inputEl.value.trim();
-  const apiKey = apiKeyInput.value.trim();
+  const apiKey = apiKeyDisplay.value.trim();
 
-  if (!apiKey) { alert('Groq APIキーを入力してください'); apiKeyInput.focus(); return; }
+  if (!licenseKey) { gateScreen.classList.remove('hidden'); return; }
+  if (!apiKey)     { return; }
   if (!text && !pendingImage) return;
 
   isStreaming = true;
@@ -475,31 +667,27 @@ async function sendMessage() {
   inputEl.value = '';
   autoResize();
 
-  // ユーザーメッセージ表示
   const userContent = text || '（画像を送信しました）';
   addMessage('user', userContent, pendingImage?.dataUrl ?? null);
 
-  // history に追加
   const userMsg = { role: 'user', content: userContent };
   if (pendingImage) userMsg.image = { base64: pendingImage.base64, media_type: pendingImage.media_type };
   history.push(userMsg);
 
-  // 画像クリア
   const imgPayload = pendingImage ? { base64: pendingImage.base64, media_type: pendingImage.media_type } : null;
   pendingImage = null;
   previewBar.classList.remove('active');
   imageBtn.classList.remove('has-image');
 
-  // ローディング
   addTyping();
 
   try {
     const body = {
       api_key: apiKey,
+      license_key: licenseKey,
       messages: history.map((m, i) => ({
         role: m.role,
         content: m.content,
-        // 画像は最後のメッセージのみ送信
         ...(i === history.length - 1 && m.image ? { image: m.image } : {}),
       })),
     };
@@ -567,8 +755,8 @@ function autoResize() {
   inputEl.style.height = 'auto';
   inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
 }
-inputEl.addEventListener('input', autoResize);
 
+inputEl.addEventListener('input', autoResize);
 inputEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();

@@ -1,11 +1,10 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional
 import httpx
 import json
-import base64
 
 from system import SYSTEM_PROMPT
 
@@ -13,23 +12,32 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+WHOP_API_URL = "https://api.whop.com/api/v2/memberships/{license_key}/validate_license"
 MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+
+import os
+WHOP_API_KEY = os.environ.get("WHOP_API_KEY", "")
+MASTER_KEY   = os.environ.get("MASTER_KEY", "")
 
 
 # ── リクエストモデル ──────────────────────────────────────────
 
 class ImageData(BaseModel):
     base64: str
-    media_type: str  # e.g. "image/jpeg"
+    media_type: str
 
 class Message(BaseModel):
-    role: str   # "user" | "assistant"
+    role: str
     content: str
-    image: Optional[ImageData] = None  # 直近メッセージのみ使用
+    image: Optional[ImageData] = None
 
 class ChatRequest(BaseModel):
     messages: list[Message]
     api_key: str
+    license_key: str
+
+class ValidateRequest(BaseModel):
+    license_key: str
 
 
 # ── ページ ───────────────────────────────────────────────────
@@ -39,10 +47,56 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+# ── ライセンスキー検証 ────────────────────────────────────────
+
+@app.post("/validate")
+async def validate_license(req: ValidateRequest):
+    # マスターキーなら即通過
+    if MASTER_KEY and req.license_key == MASTER_KEY:
+        return JSONResponse({"valid": True})
+
+    if not WHOP_API_KEY:
+        raise HTTPException(status_code=500, detail="サーバー設定エラー: WHOP_API_KEYが未設定です")
+
+    url = WHOP_API_URL.format(license_key=req.license_key)
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            url,
+            headers={
+                "Authorization": f"Bearer {WHOP_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={},
+        )
+
+    if response.status_code in (200, 201):
+        return JSONResponse({"valid": True})
+    else:
+        return JSONResponse({"valid": False, "detail": "ライセンスキーが無効です"}, status_code=403)
+
+
 # ── チャットAPI（SSEストリーミング） ──────────────────────────
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
+    # ライセンスキー検証（毎回チェック）
+    if not WHOP_API_KEY:
+        raise HTTPException(status_code=500, detail="サーバー設定エラー")
+
+    url = WHOP_API_URL.format(license_key=req.license_key)
+    async with httpx.AsyncClient(timeout=10) as client:
+        whop_res = await client.post(
+            url,
+            headers={
+                "Authorization": f"Bearer {WHOP_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={},
+        )
+    if whop_res.status_code not in (200, 201):
+        raise HTTPException(status_code=403, detail="ライセンスキーが無効です")
+
     if not req.api_key.startswith("gsk_"):
         raise HTTPException(status_code=400, detail="Groq APIキーが正しくありません（gsk_ で始まる必要があります）")
 
@@ -52,7 +106,6 @@ async def chat(req: ChatRequest):
     for i, msg in enumerate(req.messages):
         is_last = i == len(req.messages) - 1
 
-        # 画像は最後のユーザーメッセージのみ送信（トークン節約）
         if msg.role == "user" and is_last and msg.image:
             groq_messages.append({
                 "role": "user",
