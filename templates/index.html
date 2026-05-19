@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数学の先生</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=DM+Mono:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+<style>
+  :root {
+    --bg:        #0f0f0f;
+    --surface:   #181818;
+    --border:    #2a2a2a;
+    --accent:    #c9a84c;
+    --accent2:   #7eb8c9;
+    --text:      #e8e4dc;
+    --muted:     #6b6760;
+    --user-bg:   #1e1e1e;
+    --ai-bg:     #141414;
+    --radius:    10px;
+    --font-body: 'Noto Serif JP', serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  /* ── Layout ── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+  header h1 span { color: var(--muted); font-weight: 400; font-size: 0.85rem; margin-left: 8px; }
+
+  /* APIキー入力 */
+  #api-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #api-key-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #api-key-input:focus { border-color: var(--accent); }
+  #api-key-input.saved { border-color: #4caf50; }
+
+  /* ── Messages ── */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg {
+    display: flex;
+    gap: 14px;
+    animation: fadeUp 0.25s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .msg.user .avatar { background: #2a2a1e; border: 1px solid var(--accent); color: var(--accent); }
+  .msg.ai   .avatar { background: #1a2028; border: 1px solid var(--accent2); color: var(--accent2); }
+
+  .bubble {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    min-width: 0;
+  }
+  .msg.user .bubble { background: var(--user-bg); }
+  .msg.ai   .bubble { background: var(--ai-bg); }
+
+  /* 数式・テキスト */
+  .bubble p { margin-bottom: 0.6em; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .katex-display { margin: 0.8em 0; overflow-x: auto; }
+  .bubble code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: #222;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent2);
+  }
+  .bubble pre {
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    margin: 0.6em 0;
+  }
+
+  /* 画像プレビュー（会話内） */
+  .bubble img {
+    max-width: 100%;
+    max-height: 260px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* ローディングドット */
+  .typing span {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--muted);
+    border-radius: 50%;
+    margin: 0 2px;
+    animation: blink 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  /* ── Input area ── */
+  #input-area {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  /* 画像プレビュー */
+  #preview-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  #preview-bar.active { display: flex; }
+  #preview-thumb { height: 44px; border-radius: 4px; }
+  #preview-name { font-size: 0.8rem; color: var(--muted); flex: 1; }
+  #remove-image {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 1.1rem; padding: 0 4px;
+  }
+  #remove-image:hover { color: #e57373; }
+
+  #input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  #image-btn {
+    width: 38px; height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  #image-btn:hover { border-color: var(--accent); color: var(--accent); }
+  #image-btn.has-image { border-color: var(--accent2); color: var(--accent2); }
+
+  #user-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 9px 14px;
+    resize: none;
+    outline: none;
+    min-height: 38px;
+    max-height: 160px;
+    line-height: 1.6;
+    transition: border-color 0.2s;
+  }
+  #user-input:focus { border-color: var(--accent); }
+  #user-input::placeholder { color: var(--muted); }
+
+  #send-btn {
+    width: 38px; height: 38px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #0f0f0f;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+  }
+  #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  #send-btn:not(:disabled):hover { opacity: 0.85; }
+
+  #hint {
+    margin-top: 8px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ── Welcome ── */
+  #welcome {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+  #welcome .icon { font-size: 2.5rem; margin-bottom: 12px; }
+  #welcome h2 { font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
+  #welcome p { font-size: 0.88rem; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <h1>数学の先生 <span>Socratic AI Tutor</span></h1>
+    <div id="api-bar">
+      <input type="password" id="api-key-input" placeholder="Groq APIキー (gsk_...)" autocomplete="off">
+    </div>
+  </header>
+
+  <!-- Messages -->
+  <div id="messages">
+    <div id="welcome">
+      <div class="icon">∑</div>
+      <h2>数学の問題を送ってください</h2>
+      <p>答えを教えるのではなく、<br>一緒に考えながら解き方を見つけていきます。<br><br>
+      画像（📷）で手書きの問題や教科書の写真も送れます。</p>
+    </div>
+  </div>
+
+  <!-- Input area -->
+  <div id="input-area">
+    <div id="preview-bar">
+      <img id="preview-thumb" src="" alt="">
+      <span id="preview-name"></span>
+      <button id="remove-image" title="削除">✕</button>
+    </div>
+    <div id="input-row">
+      <button id="image-btn" title="画像を添付">📷</button>
+      <input type="file" id="file-input" accept="image/*" style="display:none">
+      <textarea id="user-input" rows="1" placeholder="問題を入力…（Shift+Enterで改行）"></textarea>
+      <button id="send-btn">↑</button>
+    </div>
+    <div id="hint">数式は $x^2$ や $$\int f(x)dx$$ 形式で入力できます</div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+const history = [];     // {role, content, imageDataUrl?}
+let pendingImage = null; // {base64, media_type, dataUrl, name}
+let isStreaming = false;
+
+// ── Elements ───────────────────────────────────────────────
+const messagesEl   = document.getElementById('messages');
+const welcomeEl    = document.getElementById('welcome');
+const inputEl      = document.getElementById('user-input');
+const sendBtn      = document.getElementById('send-btn');
+const imageBtn     = document.getElementById('image-btn');
+const fileInput    = document.getElementById('file-input');
+const previewBar   = document.getElementById('preview-bar');
+const previewThumb = document.getElementById('preview-thumb');
+const previewName  = document.getElementById('preview-name');
+const removeImgBtn = document.getElementById('remove-image');
+const apiKeyInput  = document.getElementById('api-key-input');
+
+// ── APIキー: localStorage から復元 ────────────────────────
+const savedKey = localStorage.getItem('groq_api_key') || '';
+apiKeyInput.value = savedKey;
+if (savedKey) apiKeyInput.classList.add('saved');
+
+apiKeyInput.addEventListener('input', () => {
+  const v = apiKeyInput.value.trim();
+  localStorage.setItem('groq_api_key', v);
+  apiKeyInput.classList.toggle('saved', v.startsWith('gsk_'));
+});
+
+// ── KaTeX レンダリング ─────────────────────────────────────
+function renderKatex(el) {
+  if (typeof renderMathInElement === 'undefined') return;
+  renderMathInElement(el, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$',  right: '$',  display: false},
+    ],
+    throwOnError: false,
+  });
+}
+
+// ── テキスト → HTML（改行・コードブロック対応）─────────────
+function textToHtml(text) {
+  // コードブロック
+  text = text.replace(/```([\s\S]*?)```/g, (_, code) =>
+    `<pre><code>${escHtml(code.trim())}</code></pre>`);
+  // インラインコード
+  text = text.replace(/`([^`]+)`/g, (_, code) =>
+    `<code>${escHtml(code)}</code>`);
+  // 改行 → <br>（数式ブロックの前後は維持）
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── メッセージ追加 ─────────────────────────────────────────
+function addMessage(role, content, imageDataUrl = null) {
+  if (welcomeEl) welcomeEl.remove();
+
+  const msg  = document.createElement('div');
+  msg.className = `msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'user' ? '👤' : '∑';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  if (imageDataUrl) {
+    const img = document.createElement('img');
+    img.src = imageDataUrl;
+    bubble.appendChild(img);
+  }
+
+  const textDiv = document.createElement('div');
+  textDiv.className = 'text-content';
+  textDiv.innerHTML = textToHtml(content);
+  bubble.appendChild(textDiv);
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  messagesEl.appendChild(msg);
+  scrollBottom();
+
+  renderKatex(bubble);
+  return { bubble, textDiv };
+}
+
+// ── ローディング表示 ───────────────────────────────────────
+function addTyping() {
+  if (welcomeEl) welcomeEl.remove();
+  const msg = document.createElement('div');
+  msg.className = 'msg ai';
+  msg.id = 'typing-indicator';
+  msg.innerHTML = `
+    <div class="avatar">∑</div>
+    <div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  messagesEl.appendChild(msg);
+  scrollBottom();
+}
+
+function removeTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+function scrollBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// ── 画像選択 ───────────────────────────────────────────────
+imageBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const base64  = dataUrl.split(',')[1];
+    pendingImage  = { base64, media_type: file.type, dataUrl, name: file.name };
+    previewThumb.src  = dataUrl;
+    previewName.textContent = file.name;
+    previewBar.classList.add('active');
+    imageBtn.classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+  fileInput.value = '';
+});
+
+removeImgBtn.addEventListener('click', () => {
+  pendingImage = null;
+  previewBar.classList.remove('active');
+  imageBtn.classList.remove('has-image');
+});
+
+// ── 送信 ───────────────────────────────────────────────────
+async function sendMessage() {
+  if (isStreaming) return;
+
+  const text   = inputEl.value.trim();
+  const apiKey = apiKeyInput.value.trim();
+
+  if (!apiKey) { alert('Groq APIキーを入力してください'); apiKeyInput.focus(); return; }
+  if (!text && !pendingImage) return;
+
+  isStreaming = true;
+  sendBtn.disabled = true;
+  inputEl.value = '';
+  autoResize();
+
+  // ユーザーメッセージ表示
+  const userContent = text || '（画像を送信しました）';
+  addMessage('user', userContent, pendingImage?.dataUrl ?? null);
+
+  // history に追加
+  const userMsg = { role: 'user', content: userContent };
+  if (pendingImage) userMsg.image = { base64: pendingImage.base64, media_type: pendingImage.media_type };
+  history.push(userMsg);
+
+  // 画像クリア
+  const imgPayload = pendingImage ? { base64: pendingImage.base64, media_type: pendingImage.media_type } : null;
+  pendingImage = null;
+  previewBar.classList.remove('active');
+  imageBtn.classList.remove('has-image');
+
+  // ローディング
+  addTyping();
+
+  try {
+    const body = {
+      api_key: apiKey,
+      messages: history.map((m, i) => ({
+        role: m.role,
+        content: m.content,
+        // 画像は最後のメッセージのみ送信
+        ...(i === history.length - 1 && m.image ? { image: m.image } : {}),
+      })),
+    };
+
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'サーバーエラー');
+    }
+
+    removeTyping();
+    const { bubble, textDiv } = addMessage('ai', '');
+    let fullText = '';
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') break;
+        try {
+          const chunk = JSON.parse(data);
+          if (chunk.error) throw new Error(chunk.error);
+          if (chunk.content) {
+            fullText += chunk.content;
+            textDiv.innerHTML = textToHtml(fullText);
+            renderKatex(bubble);
+            scrollBottom();
+          }
+        } catch (e) {
+          if (e.message !== 'Unexpected end of JSON input') throw e;
+        }
+      }
+    }
+
+    history.push({ role: 'assistant', content: fullText });
+
+  } catch (err) {
+    removeTyping();
+    addMessage('ai', `⚠️ エラー: ${err.message}`);
+  } finally {
+    isStreaming = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+}
+
+// ── テキストエリア自動リサイズ ────────────────────────────
+function autoResize() {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
+}
+inputEl.addEventListener('input', autoResize);
+
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+sendBtn.addEventListener('click', sendMessage);
+</script>
+</body>
+</html>
