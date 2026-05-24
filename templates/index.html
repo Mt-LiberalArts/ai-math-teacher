@@ -81,6 +81,58 @@
     line-height: 1.8;
   }
 
+  /* ── Step indicator ── */
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s, transform 0.3s;
+  }
+
+  .step-dot.active {
+    background: var(--accent);
+    transform: scale(1.3);
+  }
+
+  .step-dot.done {
+    background: #4caf50;
+  }
+
+  .step-line {
+    width: 32px;
+    height: 1px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+
+  .step-line.done {
+    background: #4caf50;
+  }
+
+  /* ── Step panels ── */
+  .step-panel {
+    display: none;
+  }
+
+  .step-panel.active {
+    display: block;
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   .gate-field {
     display: flex;
     flex-direction: column;
@@ -124,6 +176,21 @@
   .gate-btn:hover { opacity: 0.85; }
   .gate-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
+  .gate-back {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+    display: block;
+    margin: 0 auto 4px;
+  }
+
+  .gate-back:hover { color: var(--text); }
+
   .gate-error {
     font-size: 0.8rem;
     color: #e57373;
@@ -140,6 +207,20 @@
   .gate-hint a {
     color: var(--accent2);
     text-decoration: none;
+  }
+
+  /* 成功バッジ */
+  .success-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #1a2e1a;
+    border: 1px solid #4caf50;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    color: #81c784;
+    margin-bottom: 20px;
   }
 
   /* ── App Layout ── */
@@ -411,24 +492,46 @@
   <div class="gate-box">
     <div class="gate-icon">∑</div>
     <h1>数学の先生</h1>
-    <p>ご利用にはライセンスキーと<br>Groq APIキーが必要です。</p>
 
-    <div class="gate-field">
-      <input type="password" id="license-key-input"
-             placeholder="ライセンスキー（Whopで購入）"
-             autocomplete="off" spellcheck="false">
-      <input type="password" id="groq-key-input"
-             placeholder="Groq APIキー（gsk_...）"
-             autocomplete="off" spellcheck="false">
+    <!-- ステップインジケーター -->
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot-1"></div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step-dot" id="dot-2"></div>
     </div>
 
-    <button class="gate-btn" id="gate-btn">入室する</button>
-    <div class="gate-error" id="gate-error"></div>
-
-    <div class="gate-hint">
-      ライセンスキーは <a href="https://whop.com" target="_blank">Whop</a> でご購入ください。<br>
-      Groq APIキーは <a href="https://console.groq.com" target="_blank">console.groq.com</a> で無料取得できます。
+    <!-- Step 1: ライセンスキー -->
+    <div class="step-panel active" id="step-1">
+      <p>ライセンスキーを入力してください。</p>
+      <div class="gate-field">
+        <input type="password" id="license-key-input"
+               placeholder="ライセンスキー（Whopで購入）"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <button class="gate-btn" id="license-btn">次へ →</button>
+      <div class="gate-error" id="license-error"></div>
+      <div class="gate-hint">
+        ライセンスキーは <a href="https://whop.com" target="_blank">Whop</a> でご購入ください。
+      </div>
     </div>
+
+    <!-- Step 2: Groq APIキー -->
+    <div class="step-panel" id="step-2">
+      <div class="success-badge">✓ ライセンス認証済み</div>
+      <p>Groq APIキーを入力してください。</p>
+      <div class="gate-field">
+        <input type="password" id="groq-key-input"
+               placeholder="Groq APIキー（gsk_...）"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <button class="gate-btn" id="groq-btn">入室する</button>
+      <button class="gate-back" id="back-btn">← 戻る</button>
+      <div class="gate-error" id="groq-error"></div>
+      <div class="gate-hint">
+        Groq APIキーは <a href="https://console.groq.com" target="_blank">console.groq.com</a> で無料取得できます。
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -477,8 +580,16 @@ let licenseKey   = '';
 const gateScreen    = document.getElementById('gate-screen');
 const licenseInput  = document.getElementById('license-key-input');
 const groqKeyInput  = document.getElementById('groq-key-input');
-const gateBtn       = document.getElementById('gate-btn');
-const gateError     = document.getElementById('gate-error');
+const licenseBtnEl  = document.getElementById('license-btn');
+const groqBtnEl     = document.getElementById('groq-btn');
+const backBtnEl     = document.getElementById('back-btn');
+const licenseError  = document.getElementById('license-error');
+const groqError     = document.getElementById('groq-error');
+const step1El       = document.getElementById('step-1');
+const step2El       = document.getElementById('step-2');
+const dot1          = document.getElementById('dot-1');
+const dot2          = document.getElementById('dot-2');
+const line1         = document.getElementById('line-1');
 const messagesEl    = document.getElementById('messages');
 const welcomeEl     = document.getElementById('welcome');
 const inputEl       = document.getElementById('user-input');
@@ -491,7 +602,7 @@ const previewName   = document.getElementById('preview-name');
 const removeImgBtn  = document.getElementById('remove-image');
 const apiKeyDisplay = document.getElementById('api-key-input');
 
-// ── セッション復元（ページリロード対応）────────────────────
+// ── セッション復元 ─────────────────────────────────────────
 const savedLicense = sessionStorage.getItem('license_key') || '';
 const savedGroq    = sessionStorage.getItem('groq_key') || '';
 if (savedLicense && savedGroq) {
@@ -500,23 +611,40 @@ if (savedLicense && savedGroq) {
   gateScreen.classList.add('hidden');
 }
 
-// ── ゲート認証 ─────────────────────────────────────────────
-gateBtn.addEventListener('click', handleGate);
-[licenseInput, groqKeyInput].forEach(el =>
-  el.addEventListener('keydown', e => { if (e.key === 'Enter') handleGate(); })
-);
+// ── Step切り替えヘルパー ───────────────────────────────────
+function goToStep2() {
+  step1El.classList.remove('active');
+  step2El.classList.add('active');
+  dot1.classList.remove('active');
+  dot1.classList.add('done');
+  line1.classList.add('done');
+  dot2.classList.add('active');
+  groqKeyInput.focus();
+}
 
-async function handleGate() {
+function goToStep1() {
+  step2El.classList.remove('active');
+  step1El.classList.add('active');
+  dot2.classList.remove('active');
+  dot1.classList.remove('done');
+  dot1.classList.add('active');
+  line1.classList.remove('done');
+  licenseError.textContent = '';
+  licenseInput.focus();
+}
+
+// ── Step 1: ライセンスキー検証 ────────────────────────────
+licenseBtnEl.addEventListener('click', handleLicense);
+licenseInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleLicense(); });
+
+async function handleLicense() {
   const lk = licenseInput.value.trim();
-  const gk = groqKeyInput.value.trim();
+  licenseError.textContent = '';
 
-  gateError.textContent = '';
+  if (!lk) { licenseError.textContent = 'ライセンスキーを入力してください'; return; }
 
-  if (!lk) { gateError.textContent = 'ライセンスキーを入力してください'; return; }
-  if (!gk.startsWith('gsk_')) { gateError.textContent = 'Groq APIキーが正しくありません（gsk_ で始まる必要があります）'; return; }
-
-  gateBtn.disabled = true;
-  gateBtn.textContent = '確認中…';
+  licenseBtnEl.disabled = true;
+  licenseBtnEl.textContent = '確認中…';
 
   try {
     const res = await fetch('/validate', {
@@ -529,19 +657,41 @@ async function handleGate() {
     if (data.valid) {
       licenseKey = lk;
       sessionStorage.setItem('license_key', lk);
-      sessionStorage.setItem('groq_key', gk);
-      apiKeyDisplay.value = gk;
-      gateScreen.classList.add('hidden');
+      licenseInput.classList.remove('error');
+      licenseInput.classList.add('valid');
+      goToStep2();
     } else {
-      gateError.textContent = 'ライセンスキーが無効です。Whopでご購入ください。';
+      licenseError.textContent = 'ライセンスキーが無効です。Whopでご購入ください。';
       licenseInput.classList.add('error');
     }
   } catch (e) {
-    gateError.textContent = 'サーバーエラーが発生しました。しばらく待ってから再試行してください。';
+    licenseError.textContent = 'サーバーエラーが発生しました。しばらく待ってから再試行してください。';
   } finally {
-    gateBtn.disabled = false;
-    gateBtn.textContent = '入室する';
+    licenseBtnEl.disabled = false;
+    licenseBtnEl.textContent = '次へ →';
   }
+}
+
+// ── Step 2: Groq APIキー入力 ──────────────────────────────
+groqBtnEl.addEventListener('click', handleGroq);
+groqKeyInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleGroq(); });
+backBtnEl.addEventListener('click', goToStep1);
+
+function handleGroq() {
+  const gk = groqKeyInput.value.trim();
+  groqError.textContent = '';
+
+  if (!gk) { groqError.textContent = 'Groq APIキーを入力してください'; return; }
+  if (!gk.startsWith('gsk_')) {
+    groqError.textContent = 'Groq APIキーが正しくありません（gsk_ で始まる必要があります）';
+    groqKeyInput.classList.add('error');
+    return;
+  }
+
+  sessionStorage.setItem('groq_key', gk);
+  apiKeyDisplay.value = gk;
+  groqKeyInput.classList.add('valid');
+  gateScreen.classList.add('hidden');
 }
 
 // ── KaTeX ─────────────────────────────────────────────────
