@@ -1,7 +1,6 @@
 # AI数学教師 デプロイ手順書
 
 ## 現在の構成
-
 ```
 ai-math-teacher/
 ├── main.py           ← FastAPI本体（CLIで編集禁止！）
@@ -12,13 +11,11 @@ ai-math-teacher/
 ├── Dockerfile
 └── .gitignore
 ```
-
 > ⚠️ **ファイル編集はClaudeに作成してもらい、ダウンロード→上書きコピーで行う。PowerShellでの直接編集は文字化けの原因になるため禁止。**
 
 ---
 
 ## 現在の設定
-
 | 項目 | 値 |
 |------|-----|
 | PROJECT_ID | ai-math-teacher-496804 |
@@ -30,7 +27,6 @@ ai-math-teacher/
 ---
 
 ## ファイル変更の手順
-
 1. Claudeにファイルを作成してもらう
 2. ダウンロード
 3. 上書きコピー：
@@ -46,14 +42,17 @@ python "C:\Users\user\Documents\ai-math-teacher\main.py"
 
 ## デプロイコマンド（定番・1行）
 
+> ⚠️ **`git push`だけではCloud Runに反映されない。必ずDockerビルド＆デプロイまで実行すること。**
+
 ```powershell
-git add . ; git commit -m "変更内容" ; git push origin master ; docker build -t asia-northeast1-docker.pkg.dev/ai-math-teacher-496804/ai-math-teacher/app:latest . ; docker push asia-northeast1-docker.pkg.dev/ai-math-teacher-496804/ai-math-teacher/app:latest ; gcloud run deploy ai-math-teacher --image=asia-northeast1-docker.pkg.dev/ai-math-teacher-496804/ai-math-teacher/app:latest --region=asia-northeast1
+git add . ; git commit -m "変更内容" ; git push origin master ; gcloud builds submit --tag asia-northeast1-docker.pkg.dev/ai-math-teacher-496804/ai-math-teacher/app:latest ; gcloud run deploy ai-math-teacher --image asia-northeast1-docker.pkg.dev/ai-math-teacher-496804/ai-math-teacher/app:latest --region asia-northeast1
 ```
+
+> 💡 `gcloud builds submit` はCloud Build（サーバー側）でビルドするため、ローカルにDockerが不要。
 
 ---
 
 ## 環境変数（Cloud Run）
-
 ```powershell
 gcloud run services update ai-math-teacher `
   --region=asia-northeast1 `
@@ -63,32 +62,52 @@ gcloud run services update ai-math-teacher `
 | 変数名 | 用途 |
 |--------|------|
 | MASTER_KEY | 開発用テストキー（Whop不要で入室可） |
-| WHOP_API_KEY | Whopライセンス検証用APIキー |
+| WHOP_API_KEY | Whopライセンス検証用APIキー（Company API Key: `apik_`形式） |
+
+---
+
+## Whop連携
+
+### APIの仕様メモ
+- エンドポイント: `POST /api/v2/memberships/{license_key}/validate_license`
+- 認証: `Authorization: Bearer {WHOP_API_KEY}`
+- **必須パラメータ**: `{"metadata": {}}` （空でも必須）
+- 成功レスポンス: ステータス `200` or `201`
+
+### 設定済み
+- [x] WhopにSoftwareアプリを追加
+- [x] ライセンスキー発行確認済み
+- [x] WHOP_API_KEYを環境変数に設定済み
+- [x] validate_license APIの動作確認済み
 
 ---
 
 ## GCP初期設定（初回のみ）
-
 ```powershell
 gcloud config set project ai-math-teacher-496804
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com
 gcloud artifacts repositories create ai-math-teacher --repository-format=docker --location=asia-northeast1
 gcloud auth configure-docker asia-northeast1-docker.pkg.dev
 ```
 
 ---
 
-## Whop連携（未完成）
+## トラブルシューティング
 
-- [ ] Whopで商品作成（Type: Link）
-- [ ] Cloud Run URLを設定
-- [ ] Gating有効化
-- [ ] WHOP_API_KEYを環境変数に設定済み
+### ライセンスキーが無効と表示される
+1. Cloud Runログで `/validate` のステータスコードを確認
+2. PowerShellで直接APIテスト：
+```powershell
+Invoke-RestMethod -Method POST -Uri "https://api.whop.com/api/v2/memberships/{ライセンスキー}/validate_license" -Headers @{"Authorization"="Bearer {WHOP_API_KEY}"; "Content-Type"="application/json"} -Body '{"metadata":{}}'
+```
+3. `valid: True` が返るのにアプリが弾く場合 → Dockerイメージが古い → 再ビルド＆デプロイ
+
+### コードを変更したのに反映されない
+→ `git push` だけでは反映されない。`gcloud builds submit` からやり直す。
 
 ---
 
 ## コスト
-
 - min-instances=0のためアクセスなしは**課金ゼロ**
 - 無料枠: リクエスト200万回/月、CPU 180,000秒/月
 - 小規模販売なら**月0円**で運用可能
