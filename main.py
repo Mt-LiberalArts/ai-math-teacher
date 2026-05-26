@@ -59,7 +59,7 @@ async def validate_license(req: ValidateRequest):
                 "Authorization": f"Bearer {WHOP_API_KEY}",
                 "Content-Type": "application/json",
             },
-            json={},
+            json={"metadata": {}},  # ← 修正: metadata パラメータを追加
         )
 
     if response.status_code in (200, 201):
@@ -82,7 +82,7 @@ async def chat(req: ChatRequest):
                     "Authorization": f"Bearer {WHOP_API_KEY}",
                     "Content-Type": "application/json",
                 },
-                json={},
+                json={"metadata": {}},  # ← 修正: metadata パラメータを追加
             )
         if whop_res.status_code not in (200, 201):
             raise HTTPException(status_code=403, detail="Invalid license key")
